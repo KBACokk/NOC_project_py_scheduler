@@ -17,20 +17,7 @@
 
 ---
 
-## 2. Структурная схема взаимодействия модулей
-
-> [!TIP]
-> **Файлы схемы высокого разрешения:**
-> - Векторная схема: [PyScheduler_Modules_Interaction.svg](./PyScheduler_Modules_Interaction.svg) (открывается в браузере с поддержкой масштабирования без потери чёткости).
-> - Исходный проект Draw.io: [PyScheduler_Modules_Interaction.drawio](./PyScheduler_Modules_Interaction.drawio).
-
-### 2.1. Векторная архитектурная карта
-
-[![Архитектурная схема взаимодействия модулей симулятора PyScheduler](./PyScheduler_Modules_Interaction.svg)](./PyScheduler_Modules_Interaction.svg)
-
----
-
-### 2.2. Схема компонентов и потоков данных (Mermaid Flowchart)
+### 2. Схема компонентов и потоков данных (Mermaid Flowchart)
 
 ```mermaid
 flowchart TB
@@ -87,7 +74,7 @@ flowchart TB
 
 ---
 
-### 2.3. Пояснение к диаграмме: поток сигналов и данных в такте TTI (1 мс)
+### 2.1. Пояснение к диаграмме: поток сигналов и данных в такте TTI (1 мс)
 
 Функционирование симулятора построено вокруг миллисекундного дискретного шага (TTI), координируемого диспетчером `SIMULATION_MANAGER.py`:
 
