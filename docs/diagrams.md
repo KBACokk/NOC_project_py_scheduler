@@ -3,7 +3,7 @@
 ## 1. Текущая структура 
 Показана структура взаимодействия модулей работы в `Simulation_manager`
 
-> Актуальный файл с редактора Drawio для удоства изучения [docs/Simulator_manager.drawio](../simulation_manager/docs/Simulator_manager.drawio).
+> Актуальный файл с редактора Drawio для удоства изучения [docs/Simulator_manager.drawio](docs/Simulator_manager.drawio).
 
 
 ![alt text](image.png)
