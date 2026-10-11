@@ -3,10 +3,9 @@
 **Период:** Неделя 4 (11.10.2026)  
 **Основные объекты изучения:** `SIMULATION_MANAGER.py`, а так же все сопряжённые с ним модули.  
 **Связанные документы модуля:**   
-- [docs/diagrams.md](../simulation_manager/docs/diagrams.md) — Диаграммы структур и потоков
-- [docs/audit.md](../simulation_manager/docs/audit.md) — Ревизия ядра симуляции и реестр наблюдений
-- [docs/features.md](../simulation_manager/docs/features.md) — План развития и межмодульные зависимости
-
+- [docs/diagrams.md](docs/diagrams.md) — Диаграммы структур и потоков
+- [docs/audit.md](docs/audit.md) — Ревизия ядра симуляции и реестр наблюдений
+- [docs/features.md](docs/features.md) — План развития и межмодульные зависимости
 ---
 
 ## 1. Введение и цели 4-й недели
@@ -25,11 +24,11 @@
 
 
 > **Файлы архитектурной схемы классов ядра:**
-> - Файл с диаграммой взаимодействия модуля Simulator_manager.drawio [docs/Simulator_manager.drawio](../simulation_manager/docs/Simulator_manager.drawio)
+> - Файл с диаграммой взаимодействия модуля Simulator_manager.drawio [docs/Simulator_manager.drawio](docs/Simulator_manager.drawio)
 
 
 ### 3. Интерактивная архитектурная модель (`PyScheduler_Pipeline_Architecture_1_TTI.html`)
-В дополнение к drawio-диаграммаме в проекте подготовлен подробный интерактивный аналитический документ [PyScheduler_Pipeline_Architecture_1_TTI.html](../PyScheduler_Pipeline_Architecture_1_TTI.html). 
+В дополнение к drawio-диаграммаме в проекте подготовлен подробный интерактивный аналитический документ [PyScheduler_Pipeline_Architecture_1_TTI.html](docs/PyScheduler_Pipeline_Architecture_1_TTI.html).
 
 В нем детально визуализирован сквозной конвейер одного миллисекундного такта:
 - Интерактивная трассировка всех фаз такта;
@@ -58,9 +57,9 @@
 ## 5. Итоги 4-й недели
 
 1. **Частинчно выполенены процедуры создания файлов документации:**
-   - Описаны текущие и целевые архитектурные схемы [diagrams.md](../simulation_manager/docs/diagrams.md).
-   - Проведена ревизия [audit.md](../simulation_manager/docs/audit.md) и обнаружены на данный моент 4 бага.
-   - Сформирован план развития [features.md](../simulation_manager/docs/features.md).
+   - Описаны текущие и целевые архитектурные схемы [docs/diagrams.md](docs/diagrams.md).
+   - Проведена ревизия [docs/audit.md](docs/audit.md) и обнаружены на данный моент 4 бага.
+   - Сформирован план развития [docs/features.md](docs/features.md).
 
 ## 6. TODO.
 
