@@ -4,8 +4,70 @@
 
 | ID | Категория | Объект |
 |---|---|---|
-| AUD-001 |  Баг | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` 
-| AUD-002 |  Баг | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` | 
-| AUD-003 | Недоработка | `PyScheduler/tests/scheduler_tests` |
-| AUD-007 | скрытый дефект контракта параметров | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.run_tti` | 
+| AUD-001 | подтверждённый баг | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` | 
+| AUD-002 | подтверждённый баг | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` |
+| AUD-003 | технический долг / баг в тестах | `PyScheduler/SCHEDULER.py::SchedulerInterface.create` vs `PyScheduler/tests/scheduler_tests` |
+| AUD-004 | архитектурный долг / надежность | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` | 
+| AUD-005 | тестовый долг | `PyScheduler/tests` & `PyScheduler/TEST_MODULES.py` | 
+| AUD-006 | гипотеза оптимизации / память | `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` & `PyScheduler/RES_GRID.py` | 
 
+---
+
+## 2. Карточки наблюдений
+
+### AUD-001 — Блокировка запуска симуляции при `to_file=False`
+- **Объект:** `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation`
+- **Категория:** подтверждённый баг
+- **Наблюдение:** Вся логика валидации параметров, создания ресурсной сетки `RES_GRID_LTE`, инстанцирования планировщика, `StatsManager` и сам цикл `for tti in range(self.sim_config.sim_duration)` физически вложены внутрь блока условия `if self._to_file:` (строка 1171). Ветка `else` отсутствует. Если метод `enable_verbose_log(to_file=True)` не был предварительно вызван, метод `start_simulation()` мгновенно завершается, не выполняя ни одного TTI.
+- **Влияние:** Симулятор невозможно использовать без записи лога в файл `output.txt` 
+- **Связь:** FEAT-001
+---
+
+### AUD-002 — Двойной вызов `StatsManager.collect(tti)` в цикле TTI
+- **Объект:** `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation`
+- **Категория:** подтверждённый баг
+- **Наблюдение:** Вызов метода сбора метрик `self.stats_manager.collect(tti)` продублирован дважды внутри одной итерации главного цикла:
+  - Первый вызов: строки 1292–1294 (сразу после `run_tti(current_time=tti)`).
+  - Второй вызов: строки 1323–1325 (после блока обновления прогресс-бара `sbar`).
+  В результате каждый снапшот телеметрии сохраняется в очередь `self.history` и `self.detailed_history` дважды.
+- **Влияние:** Размер результирующих CSV и JSON файлов искусственно завышается ровно в 2 раза; искажаются интегральные статистические расчеты и временные ряды метрик при анализе в `PLOT_METRICS.py`.
+- **Связь:** FEAT-002
+
+---
+
+### AUD-003 — Несоответствие алгоритмов планировщика в тестах и фабрике `SchedulerInterface`
+- **Объект:** `PyScheduler/SCHEDULER.py::SchedulerInterface.create` и `PyScheduler/tests/scheduler_tests/test_scheduler_common.py`
+- **Категория:** технический долг / баг в тестах
+- **Наблюдение:** Набор тестов `test_scheduler_common.py` и `test_fd_round_robin.py` определяет список алгоритмов `ALGORITHMS = ['FD_RR', 'FD_BCQI', 'FD_PF']`, однако фабричный метод `SchedulerInterface.create` поддерживает только следующие ключи: `'BestCQI'`, `'ProportionalFair'`, `'RoundRobin'`, `'FD_BCQI'`, `'FD_FGS'`, `'FD_PF'`. Алгоритм `'FD_RR'` в словаре отсутствует.
+- **Влияние:** Регрессионный прогон тестового комплекса завершается статусом ошибки (exit code 1), блокируя организацию автоматического CI пайплайна.
+- **Связь:** Требуется согласование с Тимуром (Уточню на собрании*).
+
+---
+
+### AUD-004 — Глобальный перехват `sys.stdout` и `sys.stderr` через прямое переопределение
+- **Объект:** `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation`
+- **Категория:** архитектурный долг / надежность
+- **Наблюдение:** Для реализации режима записи логов в файл модуль напрямую перезаписывает стандартные системные дескрипторы `sys.stdout` и `sys.stderr` ссылкой на файл `open("output.txt", "w")` (строки 1172–1176). Имя файла захардкожено в коде, не зависит от параметров конфигурации `file_prefix` или переданных каталогов.
+- **Влияние:** 
+  1. При параллельном выполнении нескольких экземпляров симуляции в одном процессе возникает гонка за файл `output.txt` и непредсказуемое поведение потоков вывода.
+  2. Невозможно направить лог в CLI-пайплайн Ники без загрязнения рабочего каталога.
+  3. В случае критического исключения или прерывания `SIGINT` (Ctrl+C) потоки консоли могут остаться перенаправленными в закрытый файл, что ломает вывод в терминале.
+- **Связь:** FEAT-001, FEAT-002
+
+---
+
+### AUD-005 — Отсутствие автоматизированных тестов ядра оркестрации в `tests/`
+- **Объект:** `PyScheduler/tests` и `PyScheduler/SIMULATION_MANAGER.py`
+- **Категория:** тестовый долг
+- **Наблюдение:** В каталоге `PyScheduler/tests` присутствуют наборы тестов для буферов базовой станции (`layered_buffer_tests`), моделей мобильности (`mobility_module_tests`) и планировщиков (`scheduler_tests`), однако отсутствуют какие-либо юнит- или интеграционные тесты для классов `SimulationManager`, `StatsManager`, `SimulationConfig` и метода `run_tti`. Файл `TEST_MODULES.py` является процедурным демонстрационным скриптом, не интегрированным в тестовый фреймворк `pytest`.
+- **Доказательство:** Отсутствие файлов с паттерном `test_sim*.py` в каталоге `tests/`. Команда `pytest --collect-only` обнаруживает 0 тестов оркестратора.
+- **Влияние:** Любые рефакторинги жизненного цикла симулятора (включая критические дефекты AUD-001 и AUD-002) не отслеживаются в процессе разработки и обнаруживаются только при ручном запуске.
+- **Связь:** FEAT-004
+
+---
+
+### AUD-006 — Предварительное выделение полной ресурсной сетки на всю длительность симуляции
+- **Объект:** `PyScheduler/SIMULATION_MANAGER.py::SimulationManager.start_simulation` & `PyScheduler/RES_GRID.py`
+- **Категория:** гипотеза оптимизации / память
+- **Наблюдение:** Число кадров рассчитывается как `num_frames = int(np.ceil(self.sim_config.sim_duration / 10))`, после чего экземпляр `RES_GRID_LTE` целиком инициализирует всю структуру кадров, субкадров, слотов и ресурсных блоков на всю длительность моделирования вперед до старта цикла (строки 1183–1188).
+- **Влияние:** При моделировании длительных интервалов (50 000 – 100 000 TTI) или запуске пула параллельных воркеров сетка создает значительный объем статических объектов в памяти RAM, хотя планировщику в каждый конкретный момент времени требуется доступ только к текущему субкадру (TTI).
